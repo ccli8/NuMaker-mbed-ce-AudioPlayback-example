@@ -12,7 +12,7 @@ NuSDFileSystem Nu_SD(PF_6, PF_7, PF_8, PF_5 ,PF_4, PF_3, PF_2, "sd");
 NAU8822L audio(PD_4, PD_5, 0x1A, PA_5, PA_6, PA_7, PD_0, PA_4); // NAU8822L object
 DigitalOut hp_enable(PE_1);
 #endif
-Serial output(USBTX, USBRX);
+
 InterruptIn button(SW2);    // button SW2
 DigitalOut led(LED1);       // flashing LED1(rgbled1)
 
@@ -73,9 +73,6 @@ void fillAudioBuf(void) {
 int main(void) {
     led = 1;
     
-    // sets the console baud-rate
-    output.baud(115200);
-    
     // disable headphone
     hp_enable = 1;
     
@@ -83,7 +80,7 @@ int main(void) {
 #if defined(TARGET_NUMAKER_PFM_NUC472)
     fp = fopen("/sd/test.pcm", "r");
     if (fp == NULL) {
-        output.printf("Error opening file!\n");
+        perror("Error opening file!\n");
         return -1;
     }
     
@@ -93,7 +90,7 @@ int main(void) {
 #endif
     audio.attach(&playback);
     
-    output.printf("Start playing...\n");
+    printf("Start playing...\n");
     audio.start();
     
     // enable headphone
@@ -101,7 +98,7 @@ int main(void) {
     
     fillAudioBuf();
     
-    output.printf("Stop playing.\n");
+    printf("Stop playing.\n");
     audio.stop();
     
     led = 0;
