@@ -8,48 +8,85 @@
 NAU8822L audio(PC_9, PA_15, 0x1A, PG_7, PG_8, PG_9, PI_11, PI_12); // NAU8822L object
 DigitalOut hp_enable(PH_2);
 NuSDFileSystem Nu_SD(PF_6, PF_7, PF_8, PF_5 ,PF_4, PF_3, PF_2, "sd");
+
 #elif defined(TARGET_NUMAKER_PFM_M453)
 NAU8822L audio(PD_4, PD_5, 0x1A, PA_5, PA_6, PA_7, PD_0, PA_4); // NAU8822L object
 DigitalOut hp_enable(PE_1);
+
 #endif
 
 InterruptIn button(SW2);    // button SW2
 DigitalOut led(LED1);       // flashing LED1(rgbled1)
 
+int audioBuf[4096];
+
 int readPtr = 0;
+int writePtr = 0;
+
+int samplingRate = 8000;
+char channelCount = 1;
+char sampleBitLength = 16;
 
 #if defined(TARGET_NUMAKER_PFM_NUC472)
 FILE *fp;
 
-int audioBuf[4096];
-
-int writePtr = 0;
 int theta = 0;
+
 #elif defined(TARGET_NUMAKER_PFM_M453)
-// 1k sine wave@sampling rate 16kHz stereo 16-bit
-const char sine1k[] = {
-    0x00, 0x00, 0x00, 0x00, 0x1F, 0x06, 0x1F, 0x06, 0x50, 0x0B, 0x50, 0x0B, 0xC7, 0x0E, 0xC7, 0x0E,
-    0xFF, 0x0F, 0xFF, 0x0F, 0xC7, 0x0E, 0xC7, 0x0E, 0x50, 0x0B, 0x50, 0x0B, 0x1F, 0x06, 0x1F, 0x06,
-    0x00, 0x00, 0x00, 0x00, 0xE1, 0xF9, 0xE1, 0xF9, 0xB0, 0xF4, 0xB0, 0xF4, 0x39, 0xF1, 0x39, 0xF1,
-    0x01, 0xF0, 0x01, 0xF0, 0x39, 0xF1, 0x39, 0xF1, 0xB0, 0xF4, 0xB0, 0xF4, 0xE1, 0xF9, 0xE1, 0xF9
+// 1k sine wave@sampling rate 8kHz mono 16-bit
+const char sine1k[16] = {
+	0x00, 0x00, 0x50, 0x0B, 0xFF, 0x0F, 0x50, 0x0B, 0x00, 0x00, 0xB0, 0xF4, 0x01, 0xF0, 0xB0, 0xF4
 };
+
+int flag = 0;
+
 #endif
 
 void flip(void) {
     led = !led;
 }
 
-void playback(void) {
+void play(void) {
 #if defined(TARGET_NUMAKER_PFM_NUC472)
     audio.write(audioBuf, readPtr, 4);
     readPtr += 4;
     readPtr &= 0xFFF;
     theta -= 4;
 #elif defined(TARGET_NUMAKER_PFM_M453)
-    audio.write((int *)sine1k, readPtr, 2);
-    readPtr += 2;
-    readPtr &= 0xF;
+    if (flag == 0) {
+        audio.write((int *)sine1k, readPtr, 2);
+        readPtr += 2;
+        readPtr &= 0x3;
+    } else {
+        audio.write(audioBuf, readPtr, 2);
+        readPtr += 2;
+        readPtr &= 0xFFF;
+    }
 #endif
+}
+
+void record(void) {
+    audio.read();
+    
+#if defined(TARGET_NUMAKER_PFM_NUC472)
+    audioBuf[writePtr] = audio.rxBuffer[0];
+    audioBuf[++writePtr] = audio.rxBuffer[1];
+    audioBuf[++writePtr] = audio.rxBuffer[2];
+    audioBuf[++writePtr] = audio.rxBuffer[3];
+    ++writePtr;
+    theta += 4;
+    if (writePtr > 4094) {
+        writePtr = 0;
+    }
+#elif defined(TARGET_NUMAKER_PFM_M453)
+    audioBuf[writePtr] = audio.rxBuffer[0];
+    audioBuf[++writePtr] = audio.rxBuffer[1];
+    ++writePtr;
+    if (writePtr > 4094) {
+        writePtr = 0;
+        flag = 1;
+    }
+#endif  
 }
 
 void fillAudioBuf(void) {
@@ -66,40 +103,112 @@ void fillAudioBuf(void) {
         }
     }
 #elif defined(TARGET_NUMAKER_PFM_M453)
-    while (1);
+    while (1) {
+        Thread::wait(500);
+    }
 #endif
 }
 
-int main(void) {
-    led = 1;
+void drainAudioBuf(void) {
+#if defined(TARGET_NUMAKER_PFM_NUC472)
+    int i = 0;
+    while (1) {
+        if (theta > 512 ) {
+            fwrite(&audioBuf[readPtr], 4, 128, fp);
+            NVIC_DisableIRQ(I2S1_IRQn); // FIXME
+            theta -= 128;
+            NVIC_EnableIRQ(I2S1_IRQn);  // FIXME
+            readPtr += 128;
+            if (readPtr > 4094)
+                readPtr = 0;
+            
+            i += 512;
+        }
+        
+        /* record about 10 seconds PCM */
+        if (i >= samplingRate*channelCount*sampleBitLength/8*10)
+            break;
+    }
+#elif defined(TARGET_NUMAKER_PFM_M453)
+    while (flag == 0) {
+        Thread::wait(500);
+    }
+#endif
+}
+
+void demo_record(void) {
+    for (int i = 0; i < 4096; i++) {
+        audioBuf[i] = 0;
+    }
     
-    // disable headphone
-    hp_enable = 1;
+#if defined(TARGET_NUMAKER_PFM_NUC472)
+    fp = fopen("/sd/test.pcm", "w");
+    if (fp == NULL) {
+        perror("\r\nError opening file!\r\n");
+        exit(1);
+    }
+#endif
     
-    button.rise(&flip);
+    audio.attach(&record);
+    audio.format(samplingRate, channelCount, sampleBitLength);
+    
+    printf("Start recording...\r\n");
+    audio.record();
+    
+    drainAudioBuf();
+    
+#if defined(TARGET_NUMAKER_PFM_NUC472)
+    fclose(fp);
+#endif
+    
+    printf("Stop recording.\r\n");
+    audio.stop();
+}
+
+void demo_play(void) {
 #if defined(TARGET_NUMAKER_PFM_NUC472)
     fp = fopen("/sd/test.pcm", "r");
     if (fp == NULL) {
-        perror("Error opening file!\n");
-        return -1;
+        perror("\r\nError opening file!\r\n");
+        exit(1);
     }
+    
+//    fseek(fp, 44, SEEK_SET);
     
     for (int i = 0; i < 4096; i++) {
         audioBuf[i] = 0;
     }
 #endif
-    audio.attach(&playback);
     
-    printf("Start playing...\n");
-    audio.start();
+    // disable headphone
+    hp_enable = 1;
+    
+    audio.attach(&play);
+    audio.format(samplingRate, channelCount, sampleBitLength);
     
     // enable headphone
 	hp_enable = 0;
     
+    printf("Start playing...\r\n");
+    audio.start();
+    
     fillAudioBuf();
     
-    printf("Stop playing.\n");
+    printf("Stop playing.\r\n");
     audio.stop();
+    
+    // disable headphone
+    hp_enable = 1;
+}
+
+int main(void) {
+    led = 1;
+    
+    button.rise(&flip);
+    
+    demo_record();
+    
+    demo_play();
     
     led = 0;
 }
