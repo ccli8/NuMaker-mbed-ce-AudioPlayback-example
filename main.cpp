@@ -3,11 +3,16 @@
 #include "NAU8822L.h"
 
 #if defined(TARGET_NUMAKER_PFM_NUC472)
-#include "NuSDFileSystem.h"
+#include "FATFileSystem.h"
+#include "NuSDBlockDevice.h"
+#include <stdio.h>
+#include <errno.h>
 
 NAU8822L audio(PC_9, PA_15, 0x1A, PG_7, PG_8, PG_9, PI_11, PI_12); // NAU8822L object
 DigitalOut hp_enable(PH_2);
-NuSDFileSystem Nu_SD(PF_6, PF_7, PF_8, PF_5 ,PF_4, PF_3, PF_2, "sd");
+NuSDBlockDevice bd(MBED_CONF_APP_SD_DAT0, MBED_CONF_APP_SD_DAT1, MBED_CONF_APP_SD_DAT2, MBED_CONF_APP_SD_DAT3,  // SD DAT0-3
+    MBED_CONF_APP_SD_CMD, MBED_CONF_APP_SD_CLK, MBED_CONF_APP_SD_CD);                                           // SD CMD/CLK/CD
+FATFileSystem fs("fs");
 
 #elif defined(TARGET_NUMAKER_PFM_M453)
 NAU8822L audio(PD_4, PD_5, 0x1A, PA_5, PA_6, PA_7, PD_0, PA_4); // NAU8822L object
@@ -28,9 +33,23 @@ char channelCount = 1;
 char sampleBitLength = 16;
 
 #if defined(TARGET_NUMAKER_PFM_NUC472)
-FILE *fp;
+FILE *fd;
 
 int theta = 0;
+
+void return_error(int ret_val) {
+    if (ret_val)
+        printf("Failure. %d\r\n", ret_val);
+    else
+        printf("done.\r\n");
+}
+
+void errno_error(void* ret_val) {
+    if (ret_val == NULL)
+        printf(" Failure. %d \r\n", errno);
+    else
+        printf(" done.\r\n");
+}
 
 #elif defined(TARGET_NUMAKER_PFM_M453)
 // 1k sine wave@sampling rate 8kHz mono 16-bit
@@ -91,10 +110,10 @@ void record(void) {
 
 void fillAudioBuf(void) {
 #if defined(TARGET_NUMAKER_PFM_NUC472)
-    while (!feof(fp)) {
+    while (!feof(fd)) {
         if (theta < 4096) {
             // read 2 integers
-            fread(&audioBuf[writePtr], 4, 2, fp);
+            fread(&audioBuf[writePtr], 4, 2, fd);
             NVIC_DisableIRQ(I2S1_IRQn); // FIXME
             theta += 2;
             NVIC_EnableIRQ(I2S1_IRQn);  // FIXME
@@ -114,7 +133,7 @@ void drainAudioBuf(void) {
     int i = 0;
     while (1) {
         if (theta > 512 ) {
-            fwrite(&audioBuf[readPtr], 4, 128, fp);
+            fwrite(&audioBuf[readPtr], 4, 128, fd);
             NVIC_DisableIRQ(I2S1_IRQn); // FIXME
             theta -= 128;
             NVIC_EnableIRQ(I2S1_IRQn);  // FIXME
@@ -142,11 +161,9 @@ void demo_record(void) {
     }
     
 #if defined(TARGET_NUMAKER_PFM_NUC472)
-    fp = fopen("/sd/test.pcm", "w");
-    if (fp == NULL) {
-        perror("\r\nError opening file!\r\n");
-        exit(1);
-    }
+    printf("Opening a new file test.pcm");
+    fd = fopen("/fs/test.pcm", "w");
+    errno_error(fd);
 #endif
     
     audio.attach(&record);
@@ -158,7 +175,7 @@ void demo_record(void) {
     drainAudioBuf();
     
 #if defined(TARGET_NUMAKER_PFM_NUC472)
-    fclose(fp);
+    fclose(fd);
 #endif
     
     printf("Stop recording.\r\n");
@@ -167,13 +184,11 @@ void demo_record(void) {
 
 void demo_play(void) {
 #if defined(TARGET_NUMAKER_PFM_NUC472)
-    fp = fopen("/sd/test.pcm", "r");
-    if (fp == NULL) {
-        perror("\r\nError opening file!\r\n");
-        exit(1);
-    }
+    printf("Opening file test.pcm read-only");
+    fd = fopen("/fs/test.pcm", "r");
+    errno_error(fd);
     
-//    fseek(fp, 44, SEEK_SET);
+//    fseek(fd, 44, SEEK_SET);
     
     for (int i = 0; i < 4096; i++) {
         audioBuf[i] = 0;
@@ -194,6 +209,10 @@ void demo_play(void) {
     
     fillAudioBuf();
     
+#if defined(TARGET_NUMAKER_PFM_NUC472)
+    fclose(fd);
+#endif
+    
     printf("Stop playing.\r\n");
     audio.stop();
     
@@ -205,6 +224,14 @@ int main(void) {
     led = 1;
     
     button.rise(&flip);
+    
+#if defined(TARGET_NUMAKER_PFM_NUC472)
+    int error = 0;
+    
+    printf("Mounting the filesystem on \"/fs\" ");
+    error = fs.mount(&bd);
+    return_error(error);
+#endif
     
     demo_record();
     
