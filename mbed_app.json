@@ -1,22 +1,75 @@
 {
     "config": {
-        "SD_DAT0": "NC",
-        "SD_DAT1": "NC",
-        "SD_DAT2": "NC",
-        "SD_DAT3": "NC",
-        "SD_CMD":  "NC",
-        "SD_CLK":  "NC",
-        "SD_CD":   "NC"
+        "SD_DAT0":  "NC",
+        "SD_DAT1":  "NC",
+        "SD_DAT2":  "NC",
+        "SD_DAT3":  "NC",
+        "SD_CMD":   "NC",
+        "SD_CLK":   "NC",
+        "SD_CD":    "NC",
+        "I2C_SDA":  "NC",
+        "I2C_SCL":  "NC",
+        "I2C_ADDR": "NC",
+        "I2S_DO":   "NC",
+        "I2S_DI":   "NC",
+        "I2S_BCLK": "NC",
+        "I2S_MCLK": "NC",
+        "I2S_LRCK": "NC"
     },
     "target_overrides": {
         "NUMAKER_PFM_NUC472": {
-            "SD_DAT0": "PF_5",
-            "SD_DAT1": "PF_4",
-            "SD_DAT2": "PF_3",
-            "SD_DAT3": "PF_2",
-            "SD_CMD":  "PF_7",
-            "SD_CLK":  "PF_8",
-            "SD_CD":   "PF_6"
+            "SD_DAT0":  "PF_5",
+            "SD_DAT1":  "PF_4",
+            "SD_DAT2":  "PF_3",
+            "SD_DAT3":  "PF_2",
+            "SD_CMD":   "PF_7",
+            "SD_CLK":   "PF_8",
+            "SD_CD":    "PF_6",
+            "I2C_SDA":  "PC_9",
+            "I2C_SCL":  "PA_15",
+            "I2C_ADDR": "0x1A",
+            "I2S_DO":   "PG_3",
+            "I2S_DI":   "PG_4",
+            "I2S_BCLK": "PG_5",
+            "I2S_MCLK": "PG_7",
+            "I2S_LRCK": "PG_6"
+        },
+        "NUMAKER_PFM_M453": {
+            "I2C_SDA":  "PD_4",
+            "I2C_SCL":  "PD_5",
+            "I2C_ADDR": "0x1A",
+            "I2S_DO":   "PA_5",
+            "I2S_DI":   "PA_6",
+            "I2S_BCLK": "PA_7",
+            "I2S_MCLK": "PD_0",
+            "I2S_LRCK": "PA_4"
+        },
+        "NUMAKER_PFM_M487": {
+            "SD_DAT0":  "PE_2",
+            "SD_DAT1":  "PE_3",
+            "SD_DAT2":  "PE_4",
+            "SD_DAT3":  "PE_5",
+            "SD_CMD":   "PE_7",
+            "SD_CLK":   "PE_6",
+            "SD_CD":    "PD_13",
+            "I2C_SDA":  "PD_8",
+            "I2C_SCL":  "PD_9",
+            "I2C_ADDR": "0x1A",
+            "I2S_DO":   "PF_7",
+            "I2S_DI":   "PF_8",
+            "I2S_BCLK": "PF_10",
+            "I2S_MCLK": "PF_9",
+            "I2S_LRCK": "PF_6"
+        },
+        "NUMAKER_PFM_NANO130": {
+            "I2C_SDA":  "PC_12",
+            "I2C_SCL":  "PC_13",
+            "I2C_ADDR": "0x1A",
+            "I2S_DO":   "PC_3",
+            "I2S_DI":   "PC_2",
+            "I2S_BCLK": "PC_1",
+            "I2S_MCLK": "PE_0",
+            "I2S_LRCK": "PC_0"
         }
     }
 }
