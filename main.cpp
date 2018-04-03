@@ -28,7 +28,7 @@ DigitalOut hp_enable(PE_1);
 
 NAU88L25 audio(MBED_CONF_APP_I2C_SDA, MBED_CONF_APP_I2C_SCL, MBED_CONF_APP_I2C_ADDR, MBED_CONF_APP_I2S_DO,
     MBED_CONF_APP_I2S_DI, MBED_CONF_APP_I2S_BCLK, MBED_CONF_APP_I2S_MCLK, MBED_CONF_APP_I2S_LRCK); // NAU88L25 object
-DigitalOut hp_enable(LED2); //dummy function
+DigitalOut hp_enable(PE_13);
 #elif defined(TARGET_NUMAKER_PFM_NANO130)
 #include "NAU88L25.h"
 
