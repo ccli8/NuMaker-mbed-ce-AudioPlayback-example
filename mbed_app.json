@@ -70,6 +70,23 @@
             "I2S_BCLK": "PC_1",
             "I2S_MCLK": "PE_0",
             "I2S_LRCK": "PC_0"
+        },
+        "NUMAKER_IOT_M487": {
+            "SD_DAT0":  "PE_2",
+            "SD_DAT1":  "PE_3",
+            "SD_DAT2":  "PB_4",
+            "SD_DAT3":  "PB_5",
+            "SD_CMD":   "PE_7",
+            "SD_CLK":   "PE_6",
+            "SD_CD":    "PD_13",
+            "I2C_SDA":  "PD_0",
+            "I2C_SCL":  "PD_1",
+            "I2C_ADDR": "0x1A",
+            "I2S_DO":   "PF_7",
+            "I2S_DI":   "PF_8",
+            "I2S_BCLK": "PF_10",
+            "I2S_MCLK": "PF_9",
+            "I2S_LRCK": "PF_6"
         }
     }
 }

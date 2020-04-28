@@ -1,6 +1,6 @@
 #include "mbed.h"
 
-#if defined(TARGET_NUMAKER_PFM_NUC472) || defined(TARGET_NUMAKER_PFM_M487)
+#if defined(TARGET_NUMAKER_PFM_NUC472) || defined(TARGET_NUMAKER_PFM_M487) || defined(TARGET_NUMAKER_IOT_M487)
 #include "FATFileSystem.h"
 #include "NuSDBlockDevice.h"
 #include <stdio.h>
@@ -35,6 +35,12 @@ DigitalOut hp_enable(PE_13);
 NAU88L25 audio(MBED_CONF_APP_I2C_SDA, MBED_CONF_APP_I2C_SCL, MBED_CONF_APP_I2C_ADDR, MBED_CONF_APP_I2S_DO,
     MBED_CONF_APP_I2S_DI, MBED_CONF_APP_I2S_BCLK, MBED_CONF_APP_I2S_MCLK, MBED_CONF_APP_I2S_LRCK); // NAU88L25 object
 DigitalOut hp_enable(LED2); //dummy function
+#elif defined(TARGET_NUMAKER_IOT_M487)
+#include "NAU88L25.h"
+
+NAU88L25 audio(MBED_CONF_APP_I2C_SDA, MBED_CONF_APP_I2C_SCL, MBED_CONF_APP_I2C_ADDR, MBED_CONF_APP_I2S_DO,
+    MBED_CONF_APP_I2S_DI, MBED_CONF_APP_I2S_BCLK, MBED_CONF_APP_I2S_MCLK, MBED_CONF_APP_I2S_LRCK); // NAU88L25 object
+DigitalOut hp_enable(PE_13);
 #endif
 
 InterruptIn button(SW2);    // button SW2
@@ -53,7 +59,7 @@ int samplingRate = 8000;
 char channelCount = 2;
 char sampleBitLength = 16;
 
-#if defined(TARGET_NUMAKER_PFM_NUC472) || defined(TARGET_NUMAKER_PFM_M487)
+#if defined(TARGET_NUMAKER_PFM_NUC472) || defined(TARGET_NUMAKER_PFM_M487) || defined(TARGET_NUMAKER_IOT_M487)
 FILE *fd;
 
 int theta = 0;
@@ -111,6 +117,11 @@ void play(void) {
     audio.write((int *)audioBuf, readPtr, 1);
     readPtr += 1;
     readPtr &= 0x7; // sine1k / 4 - 1
+#elif defined(TARGET_NUMAKER_IOT_M487)
+    audio.write(audioBuf, readPtr, 4);
+    readPtr += 4;
+    readPtr &= 0xFFF;
+    theta -= 4;
 #endif
 }
 
@@ -154,6 +165,20 @@ void record(void) {
        due to SRAM size limitation
        just demo loopback
     */
+#elif defined(TARGET_NUMAKER_IOT_M487)
+    audioBuf[writePtr] = audio.rxBuffer[0];
+    //audioBuf[++writePtr] = audio.rxBuffer[1];
+    //audioBuf[++writePtr] = audio.rxBuffer[2];
+    //audioBuf[++writePtr] = audio.rxBuffer[3];
+    //audioBuf[++writePtr] = audio.rxBuffer[4];
+    //audioBuf[++writePtr] = audio.rxBuffer[5];
+    //audioBuf[++writePtr] = audio.rxBuffer[6];
+    //audioBuf[++writePtr] = audio.rxBuffer[7];
+    ++writePtr;
+    theta += 1;
+    if (writePtr > 4094) {
+        writePtr = 0;
+    }
 #endif
 }
 
@@ -195,6 +220,18 @@ void fillAudioBuf(void) {
     while (1) {
         Thread::wait(500);
         printf("fill\r\n");
+    }
+#elif defined(TARGET_NUMAKER_IOT_M487)
+    while (!feof(fd)) {
+        if (theta < 4096) {
+            // read 2 integers
+            fread(&audioBuf[writePtr], 4, 2, fd);
+            audio.lock();   // protect shared variable
+            theta += 2;
+            audio.unlock(); // protect shared variable
+            writePtr += 2;
+            writePtr &= 0xFFF;
+        }
     }
 #endif
 }
@@ -246,6 +283,25 @@ void drainAudioBuf(void) {
     while (flag == 0) {
         Thread::wait(500);
     }
+#elif defined(TARGET_NUMAKER_IOT_M487)
+    int i = 0;
+    while (1) {
+        if (theta > 512 ) {
+            fwrite(&audioBuf[readPtr], 4, 128, fd);
+            audio.lock();   // protect shared variable
+            theta -= 128;
+            audio.unlock(); // protect shared variable
+            readPtr += 128;
+            if (readPtr > 4094)
+                readPtr = 0;
+            
+            i += 512;
+        }
+        
+        /* record about 10 seconds PCM */
+        if (i >= samplingRate*channelCount*sampleBitLength/8*10)
+            break;
+    }
 #endif
 }
 
@@ -258,7 +314,7 @@ void demo_record(void) {
         audioBuf[i] = 0;
     }
     
-#if defined(TARGET_NUMAKER_PFM_NUC472) || defined(TARGET_NUMAKER_PFM_M487)
+#if defined(TARGET_NUMAKER_PFM_NUC472) || defined(TARGET_NUMAKER_PFM_M487) || defined(TARGET_NUMAKER_IOT_M487)
     printf("Opening a new file test.pcm");
     fd = fopen("/fs/test.pcm", "w");
     errno_error(fd);
@@ -272,7 +328,7 @@ void demo_record(void) {
     
     drainAudioBuf();
     
-#if defined(TARGET_NUMAKER_PFM_NUC472) || defined(TARGET_NUMAKER_PFM_M487)
+#if defined(TARGET_NUMAKER_PFM_NUC472) || defined(TARGET_NUMAKER_PFM_M487) || defined(TARGET_NUMAKER_IOT_M487)
     fclose(fd);
 #endif
     
@@ -281,7 +337,7 @@ void demo_record(void) {
 }
 
 void demo_play(void) {
-#if defined(TARGET_NUMAKER_PFM_NUC472) || defined(TARGET_NUMAKER_PFM_M487)
+#if defined(TARGET_NUMAKER_PFM_NUC472) || defined(TARGET_NUMAKER_PFM_M487) || defined(TARGET_NUMAKER_IOT_M487)
     printf("Opening file test.pcm read-only");
     fd = fopen("/fs/test.pcm", "r");
     //fd = fopen("/fs/82.wav", "r");
@@ -313,7 +369,7 @@ void demo_play(void) {
     
     fillAudioBuf();
     
-#if defined(TARGET_NUMAKER_PFM_NUC472) || defined(TARGET_NUMAKER_PFM_M487)
+#if defined(TARGET_NUMAKER_PFM_NUC472) || defined(TARGET_NUMAKER_PFM_M487) || defined(TARGET_NUMAKER_IOT_M487)
     fclose(fd);
 #endif
     
@@ -354,7 +410,7 @@ int main(void) {
     
     button.rise(&flip);
     
-#if defined(TARGET_NUMAKER_PFM_NUC472) || defined(TARGET_NUMAKER_PFM_M487)
+#if defined(TARGET_NUMAKER_PFM_NUC472) || defined(TARGET_NUMAKER_PFM_M487) || defined(TARGET_NUMAKER_IOT_M487)
     int error = 0;
     
     printf("Mounting the filesystem on \"/fs\" ");

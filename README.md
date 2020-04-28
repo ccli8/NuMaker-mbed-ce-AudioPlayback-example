@@ -36,6 +36,11 @@ Target board "NUMAKER_PFM_NANO130".
 2. mbed toolchain "GCC_ARM"
 3. mbed compile
 
+Target board "NUMAKER_IOT_M487".
+1. mbed target "NUMAKER_IOT_M487"
+2. mbed toolchain "GCC_ARM"
+3. mbed compile
+
 Please note that to connect headphone and microphone or headset to hear the loopback result.
 
 Demo condition:
