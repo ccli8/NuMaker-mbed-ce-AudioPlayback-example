@@ -306,6 +306,11 @@ void drainAudioBuf(void) {
 }
 
 void demo_record(void) {
+    /* Init global varibles first */
+    readPtr = 0;
+    writePtr = 0;
+    theta = 0;
+
 #if defined(TARGET_NUMAKER_PFM_NANO130)
     for (int i = 0; i < 128; i++) {
 #else
@@ -337,6 +342,11 @@ void demo_record(void) {
 }
 
 void demo_play(void) {
+    /* Init global varibles first */
+    readPtr = 0;
+    writePtr = 0;
+    theta = 0;
+
 #if defined(TARGET_NUMAKER_PFM_NUC472) || defined(TARGET_NUMAKER_PFM_M487) || defined(TARGET_NUMAKER_IOT_M487)
     printf("Opening file test.pcm read-only");
     fd = fopen("/fs/test.pcm", "r");
@@ -381,6 +391,11 @@ void demo_play(void) {
 }
 
 void demo_loopback(void) {
+    /* Init global varibles first */
+    readPtr = 0;
+    writePtr = 0;
+    theta = 0;
+
     // disable headphone
     hp_enable = 1;
     
