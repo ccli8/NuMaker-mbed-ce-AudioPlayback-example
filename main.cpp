@@ -201,7 +201,12 @@ void fillAudioBuf(void) {
     }
 #elif defined(TARGET_NUMAKER_PFM_M453)
     while (1) {
+#if MBED_MAJOR_VERSION >= 6
+	ThisThread::sleep_for(500);
+#else
         Thread::wait(500);
+#endif
+
         printf("fill\r\n");
     }
 #elif defined(TARGET_NUMAKER_PFM_M487)
@@ -218,7 +223,11 @@ void fillAudioBuf(void) {
     }
 #elif defined(TARGET_NUMAKER_PFM_NANO130)
     while (1) {
+#if MBED_MAJOR_VERSION >= 6
+	ThisThread::sleep_for(500);
+#else
         Thread::wait(500);
+#endif
         printf("fill\r\n");
     }
 #elif defined(TARGET_NUMAKER_IOT_M487)
@@ -258,7 +267,11 @@ void drainAudioBuf(void) {
     }
 #elif defined(TARGET_NUMAKER_PFM_M453)
     while (flag == 0) {
+#if MBED_MAJOR_VERSION >= 6
+	ThisThread::sleep_for(500);
+#else
         Thread::wait(500);
+#endif
     }
 #elif defined(TARGET_NUMAKER_PFM_M487)
     int i = 0;
@@ -281,7 +294,11 @@ void drainAudioBuf(void) {
     }
 #elif defined(TARGET_NUMAKER_PFM_NANO130)
     while (flag == 0) {
+#if MBED_MAJOR_VERSION >= 6
+	ThisThread::sleep_for(500);
+#else
         Thread::wait(500);
+#endif
     }
 #elif defined(TARGET_NUMAKER_IOT_M487)
     int i = 0;
@@ -409,7 +426,11 @@ void demo_loopback(void) {
     audio.loopback();
     
     while (1) {
+#if MBED_MAJOR_VERSION >= 6
+	ThisThread::sleep_for(500);
+#else
         Thread::wait(500);
+#endif
         printf("loopback\r\n");
     }
     
@@ -422,7 +443,9 @@ void demo_loopback(void) {
 
 int main(void) {
     led = 1;
-    
+#ifdef MBED_MAJOR_VERSION
+    printf("Mbed OS version %d.%d.%d\r\n\n", MBED_MAJOR_VERSION, MBED_MINOR_VERSION, MBED_PATCH_VERSION);
+#endif    
     button.rise(&flip);
     
 #if defined(TARGET_NUMAKER_PFM_NUC472) || defined(TARGET_NUMAKER_PFM_M487) || defined(TARGET_NUMAKER_IOT_M487)
