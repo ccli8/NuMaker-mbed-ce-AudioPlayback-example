@@ -1,0 +1,9 @@
+[submodule "mbed-os"]
+	path = mbed-os
+	url = https://github.com/mbed-ce/mbed-os
+[submodule "NuMaker-mbed-ce-AudioCodec-driver"]
+	path = NuMaker-mbed-ce-AudioCodec-driver
+	url = https://github.com/mbed-nuvoton/NuMaker-mbed-ce-AudioCodec-driver
+[submodule "drivers/COMPONENT_NUSD"]
+	path = drivers/COMPONENT_NUSD
+	url = https://github.com/mbed-nuvoton/NuMaker-mbed-ce-SD-driver
