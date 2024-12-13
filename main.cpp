@@ -1,5 +1,8 @@
 #include "mbed.h"
 
+namespace mbed_nuvoton {}
+using namespace mbed_nuvoton;
+
 #if defined(TARGET_NUMAKER_PFM_NUC472) || defined(TARGET_NUMAKER_PFM_M487) || defined(TARGET_NUMAKER_IOT_M487)
 #include "FATFileSystem.h"
 #include "NuSDBlockDevice.h"
@@ -202,7 +205,7 @@ void fillAudioBuf(void) {
 #elif defined(TARGET_NUMAKER_PFM_M453)
     while (1) {
 #if MBED_MAJOR_VERSION >= 6
-	ThisThread::sleep_for(500);
+	ThisThread::sleep_for(500ms);
 #else
         Thread::wait(500);
 #endif
@@ -224,7 +227,7 @@ void fillAudioBuf(void) {
 #elif defined(TARGET_NUMAKER_PFM_NANO130)
     while (1) {
 #if MBED_MAJOR_VERSION >= 6
-	ThisThread::sleep_for(500);
+	ThisThread::sleep_for(500ms);
 #else
         Thread::wait(500);
 #endif
@@ -268,7 +271,7 @@ void drainAudioBuf(void) {
 #elif defined(TARGET_NUMAKER_PFM_M453)
     while (flag == 0) {
 #if MBED_MAJOR_VERSION >= 6
-	ThisThread::sleep_for(500);
+	ThisThread::sleep_for(500ms);
 #else
         Thread::wait(500);
 #endif
@@ -295,7 +298,7 @@ void drainAudioBuf(void) {
 #elif defined(TARGET_NUMAKER_PFM_NANO130)
     while (flag == 0) {
 #if MBED_MAJOR_VERSION >= 6
-	ThisThread::sleep_for(500);
+	ThisThread::sleep_for(500ms);
 #else
         Thread::wait(500);
 #endif
@@ -326,7 +329,9 @@ void demo_record(void) {
     /* Init global varibles first */
     readPtr = 0;
     writePtr = 0;
+#if defined(TARGET_NUMAKER_PFM_NUC472) || defined(TARGET_NUMAKER_PFM_M487) || defined(TARGET_NUMAKER_IOT_M487)
     theta = 0;
+#endif
 
 #if defined(TARGET_NUMAKER_PFM_NANO130)
     for (int i = 0; i < 128; i++) {
@@ -362,7 +367,9 @@ void demo_play(void) {
     /* Init global varibles first */
     readPtr = 0;
     writePtr = 0;
+#if defined(TARGET_NUMAKER_PFM_NUC472) || defined(TARGET_NUMAKER_PFM_M487) || defined(TARGET_NUMAKER_IOT_M487)
     theta = 0;
+#endif
 
 #if defined(TARGET_NUMAKER_PFM_NUC472) || defined(TARGET_NUMAKER_PFM_M487) || defined(TARGET_NUMAKER_IOT_M487)
     printf("Opening file test.pcm read-only");
@@ -411,7 +418,9 @@ void demo_loopback(void) {
     /* Init global varibles first */
     readPtr = 0;
     writePtr = 0;
+#if defined(TARGET_NUMAKER_PFM_NUC472) || defined(TARGET_NUMAKER_PFM_M487) || defined(TARGET_NUMAKER_IOT_M487)
     theta = 0;
+#endif
 
     // disable headphone
     hp_enable = 1;
@@ -427,7 +436,7 @@ void demo_loopback(void) {
     
     while (1) {
 #if MBED_MAJOR_VERSION >= 6
-	ThisThread::sleep_for(500);
+	ThisThread::sleep_for(500ms);
 #else
         Thread::wait(500);
 #endif
